@@ -5,6 +5,30 @@
 # usage: link_pics_bydate.pl <dir1> <dir2> <dir3> ....
 #   writes to current directory
 
+# The goal is to be able to point this at a iPhoto/Picasa/Apature directory
+# and collect up all the photos and ignore the garbage
+# also just random directories full of photos.  We use hardlinks so we
+# have a new collection of photos without lossing the original set.
+# It would be nice to feel save to delete the original directories, but
+# I need a couple items from the TODO list first.
+
+# TODO
+#   - Need option parser
+#     - skip videos/pictures
+#     - quiet
+#   - Should save a log of all non-picture files skipped
+#     (ignoring "normal" stuff like  .picasa.ini)
+#   - When EXIF data can't be found look for other dates
+#      iphoto puts date in directory names
+#      .picasa.ini
+#      file timestamp?  (often wrong)
+#   - should we try to save other informaion like "sue's birthday" in file/dir
+#     names?
+#   - If we can't find a date it would be good to still save files
+#   - if hardlinks fail switch to copy
+#   - test on windows
+#
+
 use strict;
 
 use File::Compare;
@@ -88,12 +112,19 @@ sub link_image {
 		#print "already linked: $pic\n";
 	} elsif ($size1 != $size2 || compare($pic, $file)) {
 		# files different
+
+	        # test if it differs by only EXIF data
+
 		print "different: $pic $file\n";
 		$file =~ s/:(\d+)(\.(\d+))?\.(\w+)$/:$1/;
 		$file .= sprintf(".%d.$4", ($3 || 0) + 1);
 		goto loop;
 	} else {
 		# not already linked but should be
+
+	        # XXX we should compare nlink and creation time to
+	        # decide which file gets replaced
+
 		print "relink $pic\n";
 		link $file, "$pic.tmp$$" ||
 		    die "link($file $pic.tmp$$) failed";
