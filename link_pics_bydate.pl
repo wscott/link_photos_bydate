@@ -37,7 +37,7 @@ use Image::ExifTool;
 use File::Find;
 
 my $exiftool = new Image::ExifTool;
-$exiftool->Options(DateFormat => '%Y-%m-%d.%H:%M:%S');
+$exiftool->Options(DateFormat => '%Y-%m-%d_%H%M%S');
 
 my %seen;
 
@@ -88,7 +88,7 @@ sub link_image {
 	if ($date =~ /^0/) {
 	    die "$date in $pic";
 	}
-	($dir = $date) =~ s/^(\d+)(.*)\..*/$1\/$1$2/;
+	($dir = $date) =~ s/^(\d+)(.*)_.*/$1\/$1$2/;
 	mkpath($dir) unless $seen{$dir} || -d $dir;
 	$seen{$dir} = 1;
 
@@ -116,8 +116,8 @@ sub link_image {
 	        # test if it differs by only EXIF data
 
 		print "different: $pic $file\n";
-		$file =~ s/:(\d+)(\.(\d+))?\.(\w+)$/:$1/;
-		$file .= sprintf(".%d.$4", ($3 || 0) + 1);
+		$file =~ s/_(\d{6})(_(\d+))?\.(\w+)$/_$1/;
+		$file .= sprintf("_%d.$4", ($3 || 0) + 1);
 		goto loop;
 	} else {
 		# not already linked but should be
