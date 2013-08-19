@@ -60,7 +60,7 @@ sub wanted {
 	return;
     }
     # XXX .gif & .png don't have exif data
-    if (/\.(cr2|jpg|jpeg|tiff|avi|mov)$/i &&
+    if (/\.(cr2|jpg|jpeg|tiff|avi|mov|mp4)$/i &&
 	$file !~ /^\._/) {
 	link_image($_);
     }
@@ -115,7 +115,7 @@ sub link_image {
 
 	        # test if it differs by only EXIF data
 
-		print "different: $pic $file\n";
+		#print "different: $pic $file\n";
 		$file =~ s/_(\d{6})(_(\d+))?\.(\w+)$/_$1/;
 		$file .= sprintf("_%d.$4", ($3 || 0) + 1);
 		goto loop;
