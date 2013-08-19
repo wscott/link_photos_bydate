@@ -35,6 +35,7 @@ use File::Compare;
 use File::Path;
 use Image::ExifTool;
 use File::Find;
+use File::Copy;
 
 my $exiftool = new Image::ExifTool;
 $exiftool->Options(DateFormat => '%Y-%m-%d_%H%M%S');
@@ -89,9 +90,12 @@ sub link_image {
 	    die "$date in $pic";
 	}
 	($dir = $date) =~ s/^(\d+)(.*)_.*/$1\/$1$2/;
-	mkpath($dir) unless $seen{$dir} || -d $dir;
-	$seen{$dir} = 1;
-
+	unless ($seen{$dir}) {
+	    unless (-d $dir) {
+		mkpath($dir) or die;
+	    }
+	    $seen{$dir} = 1;
+	}
 	my $ext;
 	($ext = $pic) =~ s/.*\.(\w+)$/\L$1/i;
 	$ext =~ s/jpeg/jpg/;
@@ -105,8 +109,9 @@ sub link_image {
 
 	if (!$size2) {
 		print "link($pic)\n";
-		link $pic, $file ||
-		    die "link($pic, $file) failed";
+		link $pic, $file or
+		    copy $pic, $file or
+		    die "copy($pic, $file) failed";
 	} elsif ($dev1 == $dev2 && $ino1 == $ino2) {
 		# already linked, ignore
 		#print "already linked: $pic\n";
@@ -119,6 +124,10 @@ sub link_image {
 		$file =~ s/_(\d{6})(_(\d+))?\.(\w+)$/_$1/;
 		$file .= sprintf("_%d.$4", ($3 || 0) + 1);
 		goto loop;
+	} elsif ($dev1 != $dev2) {
+		# can't link so copy
+		copy $pic, $file or
+		    die "copy($pic, $file) failed";
 	} else {
 		# not already linked but should be
 
@@ -126,9 +135,9 @@ sub link_image {
 	        # decide which file gets replaced
 
 		print "relink $pic\n";
-		link $file, "$pic.tmp$$" ||
+		link $file, "$pic.tmp$$" or
 		    die "link($file $pic.tmp$$) failed";
-		rename "$pic.tmp$$", $pic ||
+		rename "$pic.tmp$$", $pic or
 		    die "rename($pic.tmp$$, $pic) failed";
 	}
 }
